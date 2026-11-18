@@ -167,6 +167,34 @@ function renderSetup() {
   $('save-status').textContent = '';
 }
 
+function exportText() {
+  const d = new Date();
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const parts = [`Opening Trainer export - ${date}`, `${plural(entries.length, 'PGN')}`, ''];
+  for (const e of entries) {
+    parts.push(
+      `=== ${e.name.trim() || 'Untitled'} ===`,
+      `Side: ${e.color === 'white' ? 'White' : 'Black'}`,
+      `Active: ${e.enabled ? 'Yes' : 'No'}`,
+      '',
+      e.pgn.trim(),
+      '',
+      '',
+    );
+  }
+  return { text: parts.join('\r\n').replace(/\r?\n/g, '\r\n'), filename: `opening-trainer-${date}.txt` };
+}
+
+function downloadExport() {
+  const { text, filename } = exportText();
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const a = el('a', { href: url, download: filename });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function addEntry() {
   const entry = { id: newId(), name: '', color: 'white', enabled: true, pgn: '' };
   entries.push(entry);
@@ -376,6 +404,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-home]').forEach((b) =>
     b.addEventListener('click', () => { clearTimers(); show('home'); }));
   $('btn-add').addEventListener('click', addEntry);
+  $('btn-export').addEventListener('click', downloadExport);
   $('btn-examples').addEventListener('click', () => {
     entries.push(...exampleEntries());
     renderSetup();
@@ -407,4 +436,5 @@ window.__trainer = {
   allLines,
   parsePgn,
   get entries() { return entries; },
+  exportText,
 };

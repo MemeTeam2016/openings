@@ -26,6 +26,8 @@ and keep a copy of your PGNs somewhere safe if they matter to you.
   - a **White / Black** toggle for the side you play;
   - **×** to delete it.
 
+  **Export** (top right) downloads a `.txt` file with every PGN's name, side, active state
+  and moves, which is handy as a backup or for moving to another computer.
   **+ Add PGN** at the bottom adds a new one, and **Add examples** adds the sample openings
   again. Changes save automatically. Paste standard PGN. Several games in one PGN are fine,
   and every mainline and every (nested) variation becomes its own line. Headers,
