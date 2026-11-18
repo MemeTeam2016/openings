@@ -303,7 +303,6 @@ function startTraining(specific) {
   cg.setAutoShapes([]);
   hideX();
   $('complete').hidden = true;
-  $('train-name').textContent = line.label;
   $('train-side').textContent = `You play ${line.color === 'white' ? 'White' : 'Black'}`;
   $('train-side').dataset.color = line.color;
   renderProgress();
@@ -415,6 +414,7 @@ function hint() {
 function finish() {
   syncBoard(lastMoveOf(ply - 1));
   $('complete-moves').textContent = formatMoves(line.moves, line.startFen);
+  $('complete-name').textContent = line.label;
   $('complete-sub').textContent = mistakes === 0
     ? 'Perfect — no mistakes.'
     : `${mistakes} mistake${mistakes === 1 ? '' : 's'} along the way.`;

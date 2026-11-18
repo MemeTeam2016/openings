@@ -234,6 +234,7 @@ textarea:focus { border-color: var(--accent); }
   display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
 .complete-card h3 { font-size: 20px; }
+.complete-card .complete-name { font-weight: 600; margin-top: -4px; }
 .complete-card p { margin: 0; }
 .moves-small { font: 12px/1.6 ui-monospace, Consolas, monospace; color: var(--muted); max-height: 7em; overflow: auto; }
 .complete-card button { margin-top: 10px; }
