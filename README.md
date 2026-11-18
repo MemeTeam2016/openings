@@ -5,7 +5,9 @@ random lines on a Lichess-style board. Works fully offline: no server, no CDN, n
 
 ## Start it
 
-Pick one:
+**Online:** <https://memeteam2016.github.io/openings/> (GitHub Pages, works on any computer).
+
+**Locally**, pick one:
 
 - **Double-click `Open Trainer.cmd`**, or open **`index.html`** directly in your browser.
   The app is already built, so this is all you need.
@@ -48,6 +50,15 @@ npm install      # chessground, chess.js, esbuild (from the official npm registr
 npm test         # PGN parser tests
 npm run build    # writes dist/app.js, dist/app.css and copies src/index.html -> index.html
 ```
+
+To update the online version, rebuild, then commit and push. The built `dist/` folder is
+committed, and GitHub Pages serves the `main` branch root:
+
+```bash
+npm run build && git add -A && git commit -m "Update" && git push
+```
+
+Saved PGNs live in each browser, so the online site and your local copy each keep their own.
 
 Layout:
 
