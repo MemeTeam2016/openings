@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { parsePgn, formatMoves } from '../src/pgn.js';
 import { EXAMPLE_WHITE, EXAMPLE_BLACK } from '../src/examples.js';
+import { formatExport, parseExport } from '../src/exportFormat.js';
 
 const sans = (l) => l.moves.map((m) => m.san).join(' ');
 let n = 0;
@@ -65,6 +66,32 @@ t('FEN start position', () => {
 
 t('formatMoves', () => {
   assert.equal(formatMoves(['e4', 'e5', 'Nf3']), '1. e4 e5 2. Nf3');
+});
+
+t('export/import round trip', () => {
+  const entries = [
+    { name: 'Ruy Lopez', color: 'white', enabled: true, pgn: '[Event "x"]\n\n1. e4 e5 {c} (1... c5) 2. Nf3 *' },
+    { name: '  Caro ', color: 'black', enabled: false, pgn: '1. e4 c6\n\n2. d4 d5 *' },
+    { name: '', color: 'white', enabled: true, pgn: '' },
+  ];
+  const { text, filename } = formatExport(entries, new Date(2026, 10, 17));
+  assert.equal(filename, 'opening-trainer-2026-11-17.txt');
+  assert.ok(text.includes('\r\n'));
+  const back = parseExport(text);
+  assert.deepEqual(back, [
+    { name: 'Ruy Lopez', color: 'white', enabled: true, pgn: entries[0].pgn },
+    { name: 'Caro', color: 'black', enabled: false, pgn: entries[1].pgn },
+    { name: 'Untitled', color: 'white', enabled: true, pgn: '' },
+  ]);
+});
+
+t('import tolerates missing meta and junk before first header', () => {
+  const back = parseExport('hello\n=== A ===\n1. d4 *\n=== B ===\nside: black\n1. e4 *');
+  assert.deepEqual(back, [
+    { name: 'A', color: 'white', enabled: true, pgn: '1. d4 *' },
+    { name: 'B', color: 'black', enabled: true, pgn: '1. e4 *' },
+  ]);
+  assert.deepEqual(parseExport('just some text'), []);
 });
 
 console.log(`\n${n} tests passed`);

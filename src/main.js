@@ -2,6 +2,7 @@ import { Chessground } from 'chessground';
 import { Chess } from 'chess.js';
 import { parsePgn, formatMoves } from './pgn.js';
 import { EXAMPLES } from './examples.js';
+import { formatExport, parseExport } from './exportFormat.js';
 
 // ---------- storage ----------
 // entries: [{ id, name, color: 'white'|'black', enabled, pgn }]
@@ -167,22 +168,45 @@ function renderSetup() {
   $('save-status').textContent = '';
 }
 
-function exportText() {
-  const d = new Date();
-  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const parts = [`Opening Trainer export - ${date}`, `${plural(entries.length, 'PGN')}`, ''];
-  for (const e of entries) {
-    parts.push(
-      `=== ${e.name.trim() || 'Untitled'} ===`,
-      `Side: ${e.color === 'white' ? 'White' : 'Black'}`,
-      `Active: ${e.enabled ? 'Yes' : 'No'}`,
-      '',
-      e.pgn.trim(),
-      '',
-      '',
-    );
+const exportText = () => formatExport(entries);
+
+// Import adds the file's PGNs to the list, skipping any that are already there
+// (same name, side and moves).
+const sameKey = (e) => [(e.name || '').trim(), e.color, (e.pgn || '').replace(/\s+/g, ' ').trim()].join('|');
+
+function importText(text) {
+  const incoming = parseExport(text);
+  if (!incoming.length) return { added: 0, skipped: 0, found: 0 };
+  const existing = new Set(entries.map(sameKey));
+  let added = 0;
+  let skipped = 0;
+  for (const e of incoming) {
+    const key = sameKey(e);
+    if (existing.has(key)) { skipped++; continue; }
+    existing.add(key);
+    entries.push({ id: newId(), ...e });
+    added++;
   }
-  return { text: parts.join('\r\n').replace(/\r?\n/g, '\r\n'), filename: `opening-trainer-${date}.txt` };
+  persist();
+  return { added, skipped, found: incoming.length };
+}
+
+function pickImportFile() {
+  const input = el('input', { type: 'file', accept: '.txt,text/plain' });
+  input.addEventListener('change', async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const { added, skipped, found } = importText(await file.text());
+    renderSetup();
+    if (!found) {
+      $('save-status').textContent = `No PGNs found in ${file.name}`;
+      return;
+    }
+    $('save-status').textContent = `Imported ${plural(added, 'PGN')}` +
+      (skipped ? ` (${skipped} already here)` : '');
+    if (added) $('entries').lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+  input.click();
 }
 
 function downloadExport() {
@@ -405,6 +429,7 @@ window.addEventListener('DOMContentLoaded', () => {
     b.addEventListener('click', () => { clearTimers(); show('home'); }));
   $('btn-add').addEventListener('click', addEntry);
   $('btn-export').addEventListener('click', downloadExport);
+  $('btn-import').addEventListener('click', pickImportFile);
   $('btn-examples').addEventListener('click', () => {
     entries.push(...exampleEntries());
     renderSetup();
@@ -437,4 +462,5 @@ window.__trainer = {
   parsePgn,
   get entries() { return entries; },
   exportText,
+  importText: (t) => { const r = importText(t); renderSetup(); return r; },
 };
