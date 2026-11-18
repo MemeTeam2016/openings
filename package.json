@@ -1,0 +1,23 @@
+{
+  "name": "openings",
+  "version": "1.0.0",
+  "description": "Local-only chess opening trainer",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/pgn.test.mjs",
+    "start": "node build.mjs && start \"\" index.html",
+    "serve": "node serve.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "chessground": "^9.2.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "type": "module",
+  "private": true
+}

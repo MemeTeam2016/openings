@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Opening Trainer</title>
+  <link rel="stylesheet" href="dist/app.css">
+  <script src="dist/app.js" defer></script>
+</head>
+<body data-view="home">
+
+  <!-- Home -->
+  <main id="view-home" class="view home">
+    <div class="home-inner">
+      <div class="logo" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <h1>Opening Trainer</h1>
+      <p class="muted" id="home-count"></p>
+      <div class="home-actions">
+        <button id="btn-train" class="big primary">Train</button>
+        <button id="btn-setup" class="big">Set up</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Set up -->
+  <main id="view-setup" class="view setup" hidden>
+    <header class="bar">
+      <button class="ghost" data-home>← Back</button>
+      <h2>Set up</h2>
+      <div class="bar-right">
+        <span id="save-status" class="muted"></span>
+      </div>
+    </header>
+    <div class="setup-inner">
+      <p class="muted hint-text">Tick a PGN to include it in training, and choose the side you play. Every mainline and variation becomes its own line. Changes save automatically.</p>
+      <div id="entries" class="entries"></div>
+      <p id="entries-empty" class="muted empty" hidden>No PGNs yet.</p>
+      <div class="setup-actions">
+        <button id="btn-add" class="add-btn">+ Add PGN</button>
+        <button id="btn-examples" class="ghost">Add examples</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Train -->
+  <main id="view-train" class="view train" hidden>
+    <header class="bar">
+      <button class="ghost" data-home>← Back</button>
+      <h2>Train</h2>
+      <div class="bar-right"></div>
+    </header>
+    <div class="train-layout">
+      <div id="board-shell" class="board-shell">
+        <div id="board" class="cg-wrap-host"></div>
+        <div id="wrong-x" class="wrong-x" hidden>
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50"/><path d="M35 35 L65 65 M65 35 L35 65"/></svg>
+        </div>
+        <div id="complete" class="complete" hidden>
+          <div class="complete-card">
+            <div class="check" aria-hidden="true">
+              <svg viewBox="0 0 100 100"><path d="M24 52 L43 70 L77 32"/></svg>
+            </div>
+            <h3>Line complete</h3>
+            <p id="complete-sub" class="muted"></p>
+            <p id="complete-moves" class="moves-small"></p>
+            <button id="btn-next" class="primary">Next line →</button>
+          </div>
+        </div>
+      </div>
+      <aside class="panel">
+        <div id="train-side" class="side-chip">You play White</div>
+        <h3 id="train-name">—</h3>
+        <div class="progress"><div id="train-progress-bar"></div></div>
+        <p id="train-status" class="status"></p>
+        <p id="train-moves" class="moves"></p>
+        <p id="train-mistakes" class="mistakes"></p>
+        <div class="panel-actions">
+          <button id="btn-hint" class="ghost" title="Show the move (H)">Hint</button>
+          <button id="btn-restart" class="ghost" title="Restart this line (R)">Restart</button>
+          <button id="btn-skip" class="ghost" title="Next random line (N)">Skip</button>
+        </div>
+        <p class="muted keys">Keys: H hint · R restart · N next</p>
+      </aside>
+    </div>
+  </main>
+
+</body>
+</html>
