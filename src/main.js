@@ -13,12 +13,21 @@ const OLD_B = 'openingTrainer.blackPgn';
 const newId = () => Math.random().toString(36).slice(2, 10);
 const exampleEntries = () => EXAMPLES.map((e) => ({ id: newId(), enabled: true, ...e }));
 
+const KEY_BAK = 'openingTrainer.backups'; // [{ t, entries }], newest last
+const KEY_BAD = 'openingTrainer.unreadable'; // raw data we could not parse, never overwritten
+const MAX_BACKUPS = 30;
+const BACKUP_EVERY_MS = 5 * 60 * 1000;
+
 function loadEntries() {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
-      const list = JSON.parse(raw);
-      if (Array.isArray(list)) return list;
+      try {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) return list;
+      } catch (e) { /* unreadable */ }
+      // Never silently replace data we can't read: park it under its own key first.
+      if (localStorage.getItem(KEY_BAD) === null) localStorage.setItem(KEY_BAD, raw);
     }
     // migrate the old two-box format
     const w = localStorage.getItem(OLD_W);
@@ -36,21 +45,69 @@ function loadEntries() {
 let entries = loadEntries();
 let saveTimer = null;
 
-function persist() {
+function loadBackups() {
   try {
-    localStorage.setItem(KEY, JSON.stringify(entries));
+    const list = JSON.parse(localStorage.getItem(KEY_BAK) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch (e) { return []; }
+}
+
+// Before overwriting the saved list, keep a copy of what was there.
+// Routine edits make at most one backup every few minutes; risky actions
+// (delete, import, restore, adding examples) always make one.
+function backupPrevious(force) {
+  const prev = localStorage.getItem(KEY);
+  if (!prev) return;
+  let prevEntries;
+  try { prevEntries = JSON.parse(prev); } catch (e) { return; }
+  if (!Array.isArray(prevEntries) || !prevEntries.length) return;
+  const backups = loadBackups();
+  const last = backups[backups.length - 1];
+  if (last && JSON.stringify(last.entries) === prev) return;
+  if (!force && last && Date.now() - last.t < BACKUP_EVERY_MS) return;
+  backups.push({ t: Date.now(), entries: prevEntries });
+  while (backups.length > MAX_BACKUPS) backups.shift();
+  try { localStorage.setItem(KEY_BAK, JSON.stringify(backups)); } catch (e) { /* storage full: skip */ }
+}
+
+function persist(force = false) {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  try {
+    const next = JSON.stringify(entries);
+    if (localStorage.getItem(KEY) === next) return true;
+    backupPrevious(force);
+    localStorage.setItem(KEY, next);
     localStorage.removeItem(OLD_W);
     localStorage.removeItem(OLD_B);
     return true;
   } catch (e) { return false; }
 }
-function scheduleSave() {
+function scheduleSave(force = false) {
   $('save-status').textContent = 'Saving…';
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    $('save-status').textContent = persist() ? 'All changes saved' : 'Could not save (storage unavailable)';
-  }, 400);
+  const run = () => {
+    $('save-status').textContent = persist(force) ? 'All changes saved' : 'Could not save (storage unavailable)';
+  };
+  if (force) { run(); return; }
+  saveTimer = setTimeout(run, 400);
 }
+// Don't lose the last keystrokes if the tab is closed right after typing.
+window.addEventListener('pagehide', () => { if (saveTimer) persist(); });
+
+// Another tab of this app saved: adopt its list so this tab can't overwrite it
+// with a stale copy.
+window.addEventListener('storage', (e) => {
+  if (e.key !== KEY && e.key !== null) return;
+  if (saveTimer) return; // this tab has unsaved typing; its save will win, with a backup of the other tab's version
+  entries = loadEntries();
+  const view = document.body.dataset.view;
+  if (view === 'setup') { renderSetup(); $('save-status').textContent = 'Updated from another tab'; }
+  if (view === 'home') renderHome();
+});
+
+// Ask the browser not to evict our data under storage pressure (best effort).
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) { /* ignore */ }
 
 function entryLines(entry) {
   const { lines, errors } = parsePgn(entry.pgn, entry.color);
@@ -143,7 +200,7 @@ function renderEntry(entry) {
     entries = entries.filter((e) => e !== entry);
     card.remove();
     renderEmpty();
-    scheduleSave();
+    scheduleSave(true);
   });
 
   const text = el('textarea', { value: entry.pgn, spellcheck: false, placeholder: '1. e4 e5 2. Nf3 Nc6 3. Bb5 (3. Bc4 Bc5) a6 *' });
@@ -160,6 +217,43 @@ function renderEntry(entry) {
 
 function renderEmpty() {
   $('entries-empty').hidden = entries.length > 0;
+}
+
+// ---------- history (backups) ----------
+function fmtTime(t) {
+  return new Date(t).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function openHistory() {
+  if (saveTimer) persist(); // include any pending typing in "current"
+  const backups = loadBackups().slice().reverse();
+  const list = $('history-list');
+  if (!backups.length) {
+    list.replaceChildren(el('p', { className: 'muted', textContent: 'No backups yet. One is made automatically before deletes, imports and restores, and every few minutes while you edit.' }));
+  } else {
+    list.replaceChildren(...backups.map((b) => {
+      const names = b.entries.map((e) => (e.name || '').trim() || 'Untitled');
+      const btn = el('button', { className: 'ghost', textContent: 'Restore' });
+      btn.addEventListener('click', () => restoreBackup(b));
+      return el('div', { className: 'history-item' }, [
+        el('div', { className: 'history-info' }, [
+          el('div', { className: 'history-time', textContent: `${fmtTime(b.t)} · ${plural(b.entries.length, 'PGN')}` }),
+          el('div', { className: 'history-names muted', textContent: names.join(', ') }),
+        ]),
+        btn,
+      ]);
+    }));
+  }
+  $('history').showModal();
+}
+
+function restoreBackup(b) {
+  if (!confirm(`Restore the ${plural(b.entries.length, 'PGN')} saved ${fmtTime(b.t)}?\nYour current list is backed up first, so you can undo this from History.`)) return;
+  entries = JSON.parse(JSON.stringify(b.entries));
+  persist(true);
+  $('history').close();
+  renderSetup();
+  $('save-status').textContent = 'Restored backup';
 }
 
 function renderSetup() {
@@ -187,7 +281,7 @@ function importText(text) {
     entries.push({ id: newId(), ...e });
     added++;
   }
-  persist();
+  persist(true);
   return { added, skipped, found: incoming.length };
 }
 
@@ -430,10 +524,13 @@ window.addEventListener('DOMContentLoaded', () => {
   $('btn-add').addEventListener('click', addEntry);
   $('btn-export').addEventListener('click', downloadExport);
   $('btn-import').addEventListener('click', pickImportFile);
+  $('btn-history').addEventListener('click', openHistory);
+  $('history-close').addEventListener('click', () => $('history').close());
+  $('history').addEventListener('click', (e) => { if (e.target === $('history')) $('history').close(); });
   $('btn-examples').addEventListener('click', () => {
     entries.push(...exampleEntries());
     renderSetup();
-    scheduleSave();
+    scheduleSave(true);
   });
   $('btn-next').addEventListener('click', () => startTraining());
   $('btn-skip').addEventListener('click', () => startTraining());

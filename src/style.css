@@ -152,6 +152,22 @@ textarea:focus { border-color: var(--accent); }
   .entry-name { flex-basis: calc(100% - 80px); }
 }
 
+/* history dialog */
+.history {
+  width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 640px);
+  border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px;
+  background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+}
+.history::backdrop { background: rgba(20, 20, 18, .38); }
+.history-head { display: flex; align-items: center; justify-content: space-between; }
+.history-head h3 { font-size: 17px; }
+.history-note { font-size: 13px; margin: 4px 0 12px; }
+.history-list { display: flex; flex-direction: column; }
+.history-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.history-info { flex: 1; min-width: 0; }
+.history-time { font-weight: 500; font-size: 14px; }
+.history-names { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* ---------- train ---------- */
 .train-layout {
   display: flex; gap: 32px; justify-content: center; align-items: flex-start;

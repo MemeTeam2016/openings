@@ -29,7 +29,12 @@ and keep a copy of your PGNs somewhere safe if they matter to you.
   **Export** (top right) downloads a `.txt` file with every PGN's name, side, active state
   and moves, which is handy as a backup or for moving to another computer. **Import** reads
   that file back in and adds its PGNs to your list, skipping any you already have with the
-  same name, side and moves.
+  same name, side and moves. **History** lists automatic backups of your PGN list
+  (taken before every delete, import, restore or "Add examples", and every few minutes while
+  editing; the last 30 are kept) and can restore any of them. If the site is open in several
+  tabs, each tab picks up saves from the others, so an old tab can't overwrite newer changes.
+  Backups live in the same browser storage as your PGNs, so for a copy that survives clearing
+  browser data, use **Export**.
   **+ Add PGN** at the bottom adds a new one, and **Add examples** adds the sample openings
   again. Changes save automatically. Paste standard PGN. Several games in one PGN are fine,
   and every mainline and every (nested) variation becomes its own line. Headers,

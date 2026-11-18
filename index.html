@@ -31,6 +31,7 @@
       <h2>Set up</h2>
       <div class="bar-right">
         <span id="save-status" class="muted"></span>
+        <button id="btn-history" class="ghost" title="Restore an earlier version of your PGNs">History</button>
         <button id="btn-import" class="ghost" title="Add PGNs from an exported .txt file">Import</button>
         <button id="btn-export" class="ghost" title="Download all PGNs as a .txt file">Export</button>
       </div>
@@ -45,6 +46,15 @@
       </div>
     </div>
   </main>
+
+  <dialog id="history" class="history">
+    <div class="history-head">
+      <h3>History</h3>
+      <button id="history-close" class="icon-btn" title="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="muted history-note">Earlier versions of your PGN list, saved automatically in this browser.</p>
+    <div id="history-list" class="history-list"></div>
+  </dialog>
 
   <!-- Train -->
   <main id="view-train" class="view train" hidden>
